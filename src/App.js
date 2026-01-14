@@ -2,6 +2,17 @@ import './App.css';
 import { Component } from 'react';
 import styled from 'styled-components';
 let one = 10;
+if (!localStorage.getItem("ar")) {
+  localStorage.setItem(
+    "ar",
+    JSON.stringify([
+      { id: 'id-1', name: 'Rosie Simpson', number: '459-12-56' },
+      { id: 'id-2', name: 'Hermione Kline', number: '443-89-12' },
+      { id: 'id-3', name: 'Eden Clements', number: '645-17-79' },
+      { id: 'id-4', name: 'Annie Copeland', number: '227-91-26' },
+    ])
+  );
+}
 const Container = styled.div`
   width: 400px;
   margin: 0 auto;
@@ -77,40 +88,46 @@ const ContactItem = styled.li`
 
 class App extends Component {
   state = {
-    contacts: [
-      { id: 'id-1', name: 'Rosie Simpson', number: '459-12-56' },
-      { id: 'id-2', name: 'Hermione Kline', number: '443-89-12' },
-      { id: 'id-3', name: 'Eden Clements', number: '645-17-79' },
-      { id: 'id-4', name: 'Annie Copeland', number: '227-91-26' },
-    ],
+    contacts: JSON.parse(localStorage.getItem("ar")) || [],
     filter: '',
     name: '',
     number: ''
   };
 
+  componentDidUpdate(_, prevState) {
+    if (prevState.contacts !== this.state.contacts) {
+      localStorage.setItem("ar", JSON.stringify(this.state.contacts));
+    }
+  }
+
   remov = (id) => {
     this.setState({
-      contacts: this.state.contacts.filter(task => task.id !== id)
+      contacts: this.state.contacts.filter(c => c.id !== id)
     });
   };
 
   add = () => {
-    this.setState({
-      contacts: [...this.state.contacts, { id: `id-${one + 1}`, name: `${document.querySelector("#name").value}`, number: `${document.querySelector("#number").value}` }]
-    });
-    one = +1
-  }
+    if (!this.state.name || !this.state.number) return;
 
-  filter = (e) => {
-    this.setState({ filter: e.target.value.toLowerCase() });
+    this.setState({
+      contacts: [
+        ...this.state.contacts,
+        {
+          id: `id-${Date.now()}`,
+          name: this.state.name,
+          number: this.state.number
+        }
+      ],
+      name: '',
+      number: ''
+    });
   };
 
   render() {
-
-    const contacts = this.state.contacts.filter(contact =>
-  contact.name.toLowerCase().includes(this.state.filter) ||
-  contact.number.includes(this.state.filter)
-);
+    const filtered = this.state.contacts.filter(contact =>
+      contact.name.toLowerCase().includes(this.state.filter) ||
+      contact.number.includes(this.state.filter)
+    );
 
     return (
       <Container>
@@ -119,44 +136,41 @@ class App extends Component {
         <InputBlock>
           <p>Name</p>
           <input
-            id='name'
-            type="tel"
-            name="number"
-            pattern="\+?\d{1,4}?[-.\s]?\(?\d{1,3}?\)?[-.\s]?\d{1,4}[-.\s]?\d{1,4}[-.\s]?\d{1,9}"
-            title="Phone number must be digits and can contain spaces, dashes, parentheses and can start with +"
-            required
+            value={this.state.name}
+            onChange={e => this.setState({ name: e.target.value })}
           />
 
           <p>Number</p>
-          <input id='number' type="number" />
+          <input
+            value={this.state.number}
+            onChange={e => this.setState({ number: e.target.value })}
+          />
         </InputBlock>
 
-        <Btn onClick={() => this.add()}>ADD</Btn>
+        <Btn onClick={this.add}>ADD</Btn>
 
         <Title>Contacts</Title>
 
-        <p>Find Contacts by name or number</p>
         <input
-          id='find'
-          style={{ width: '100%', padding: '8px', marginBottom: '20px' }}
-          onChange={this.filter}
+          placeholder="Find contact"
+          onChange={e => this.setState({ filter: e.target.value.toLowerCase() })}
         />
 
         <ContactList>
-
+          {filtered.map(obj => (
+            <ContactItem key={obj.id}>
+              <div>
+                <p>{obj.name}</p>
+                <p>{obj.number}</p>
+              </div>
+              <button onClick={() => this.remov(obj.id)}>Видалити</button>
+            </ContactItem>
+          ))}
         </ContactList>
-        {contacts.map(obj => (
-  <ContactItem key={obj.id}>
-    <div>
-      <p>{obj.name}</p>
-      <p>{obj.number}</p>
-    </div>
-    <button onClick={() => this.remov(obj.id)}>Видалити</button>
-  </ContactItem>
-))}
       </Container>
     );
   }
 }
+
 
 export default App;
