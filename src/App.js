@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import styled from "styled-components";
 import "./App.css";
 
@@ -76,21 +76,27 @@ const ContactItem = styled.li`
 `;
 
 function App() {
-  const [contacts, setContacts] = useState( [
-	   {id: 'id-1', name: 'Rosie Simpson', number: '459-12-56'},
-	   {id: 'id-2', name: 'Hermione Kline', number: '443-89-12'},
-	   {id: 'id-3', name: 'Eden Clements', number: '645-17-79'},
-	   {id: 'id-4', name: 'Annie Copeland', number: '227-91-26'},
-	 ]);
-  const [filter, setFilter] = useState("");
+  const [contacts, setContacts] = useState([
+    { id: 'id-1', name: 'Rosie Simpson', number: '459-12-56' },
+    { id: 'id-2', name: 'Hermione Kline', number: '443-89-12' },
+    { id: 'id-3', name: 'Eden Clements', number: '645-17-79' },
+    { id: 'id-4', name: 'Annie Copeland', number: '227-91-26' },
+  ]);
+
   const [name, setName] = useState("");
   const [number, setNumber] = useState("");
+  const [filter, setFilter] = useState("");
 
+  // useRef для фокусування на полі Name
+  const nameInputRef = useRef();
+
+  // Завантаження контактів з localStorage
   useEffect(() => {
     const saved = JSON.parse(localStorage.getItem("contacts"));
     if (saved) setContacts(saved);
   }, []);
 
+  // Збереження контактів у localStorage
   useEffect(() => {
     localStorage.setItem("contacts", JSON.stringify(contacts));
   }, [contacts]);
@@ -106,9 +112,10 @@ function App() {
     setContacts([...contacts, { id: Date.now(), name, number }]);
     setName("");
     setNumber("");
+    nameInputRef.current.focus(); // повертаємо фокус на поле Name
   };
 
-  const removeContact = id => {
+  const removeContact = (id) => {
     setContacts(contacts.filter(c => c.id !== id));
   };
 
@@ -124,23 +131,22 @@ function App() {
         <p>Name</p>
         <input
           type="text"
-          name="name"
           value={name}
+          ref={nameInputRef} // посилання на інпут
+          onChange={e => setName(e.target.value)}
           pattern="^[a-zA-Zа-яА-Я]+(([' -][a-zA-Zа-яА-Я ])?[a-zA-Zа-яА-Я]*)*$"
           title="Name may contain only letters, apostrophe, dash and spaces."
           required
-          onChange={e => setName(e.target.value)}
         />
 
         <p>Number</p>
         <input
           type="tel"
-          name="number"
           value={number}
+          onChange={e => setNumber(e.target.value)}
           pattern="\+?\d{1,4}?[-.\s]?\(?\d{1,3}?\)?[-.\s]?\d{1,4}[-.\s]?\d{1,4}[-.\s]?\d{1,9}"
           title="Phone number must be digits and can contain spaces, dashes, parentheses and can start with +"
           required
-          onChange={e => setNumber(e.target.value)}
         />
       </InputBlock>
 
@@ -161,7 +167,7 @@ function App() {
               <p>{c.name}</p>
               <p>{c.number}</p>
             </div>
-            <button onClick={() => removeContact(c.id)}>Видалити</button>
+            <button onClick={() => removeContact(c.id)}>Delete</button>
           </ContactItem>
         ))}
       </ContactList>
