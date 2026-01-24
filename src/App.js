@@ -1,18 +1,7 @@
-import './App.css';
-import { Component } from 'react';
-import styled from 'styled-components';
-let one = 10;
-if (!localStorage.getItem("ar")) {
-  localStorage.setItem(
-    "ar",
-    JSON.stringify([
-      { id: 'id-1', name: 'Rosie Simpson', number: '459-12-56' },
-      { id: 'id-2', name: 'Hermione Kline', number: '443-89-12' },
-      { id: 'id-3', name: 'Eden Clements', number: '645-17-79' },
-      { id: 'id-4', name: 'Annie Copeland', number: '227-91-26' },
-    ])
-  );
-}
+import { useEffect, useState } from "react";
+import styled from "styled-components";
+import "./App.css";
+
 const Container = styled.div`
   width: 400px;
   margin: 0 auto;
@@ -86,91 +75,98 @@ const ContactItem = styled.li`
   }
 `;
 
-class App extends Component {
-  state = {
-    contacts: JSON.parse(localStorage.getItem("ar")) || [],
-    filter: '',
-    name: '',
-    number: ''
-  };
+function App() {
+  const [contacts, setContacts] = useState( [
+	   {id: 'id-1', name: 'Rosie Simpson', number: '459-12-56'},
+	   {id: 'id-2', name: 'Hermione Kline', number: '443-89-12'},
+	   {id: 'id-3', name: 'Eden Clements', number: '645-17-79'},
+	   {id: 'id-4', name: 'Annie Copeland', number: '227-91-26'},
+	 ]);
+  const [filter, setFilter] = useState("");
+  const [name, setName] = useState("");
+  const [number, setNumber] = useState("");
 
-  componentDidUpdate(_, prevState) {
-    if (prevState.contacts !== this.state.contacts) {
-      localStorage.setItem("ar", JSON.stringify(this.state.contacts));
+  useEffect(() => {
+    const saved = JSON.parse(localStorage.getItem("contacts"));
+    if (saved) setContacts(saved);
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("contacts", JSON.stringify(contacts));
+  }, [contacts]);
+
+  const addContact = () => {
+    if (!name || !number) return;
+
+    if (contacts.some(c => c.name.toLowerCase() === name.toLowerCase())) {
+      alert(`${name} is already in contacts`);
+      return;
     }
-  }
 
-  remov = (id) => {
-    this.setState({
-      contacts: this.state.contacts.filter(c => c.id !== id)
-    });
+    setContacts([...contacts, { id: Date.now(), name, number }]);
+    setName("");
+    setNumber("");
   };
 
-  add = () => {
-    if (!this.state.name || !this.state.number) return;
-
-    this.setState({
-      contacts: [
-        ...this.state.contacts,
-        {
-          id: `id-${Date.now()}`,
-          name: this.state.name,
-          number: this.state.number
-        }
-      ],
-      name: '',
-      number: ''
-    });
+  const removeContact = id => {
+    setContacts(contacts.filter(c => c.id !== id));
   };
 
-  render() {
-    const filtered = this.state.contacts.filter(contact =>
-      contact.name.toLowerCase().includes(this.state.filter) ||
-      contact.number.includes(this.state.filter)
-    );
+  const filteredContacts = contacts.filter(c =>
+    c.name.toLowerCase().includes(filter.toLowerCase())
+  );
 
-    return (
-      <Container>
-        <Title>PhoneBook</Title>
+  return (
+    <Container>
+      <Title>Phonebook</Title>
 
-        <InputBlock>
-          <p>Name</p>
-          <input
-            value={this.state.name}
-            onChange={e => this.setState({ name: e.target.value })}
-          />
-
-          <p>Number</p>
-          <input
-            value={this.state.number}
-            onChange={e => this.setState({ number: e.target.value })}
-          />
-        </InputBlock>
-
-        <Btn onClick={this.add}>ADD</Btn>
-
-        <Title>Contacts</Title>
-
+      <InputBlock>
+        <p>Name</p>
         <input
-          placeholder="Find contact"
-          onChange={e => this.setState({ filter: e.target.value.toLowerCase() })}
+          type="text"
+          name="name"
+          value={name}
+          pattern="^[a-zA-Zа-яА-Я]+(([' -][a-zA-Zа-яА-Я ])?[a-zA-Zа-яА-Я]*)*$"
+          title="Name may contain only letters, apostrophe, dash and spaces."
+          required
+          onChange={e => setName(e.target.value)}
         />
 
-        <ContactList>
-          {filtered.map(obj => (
-            <ContactItem key={obj.id}>
-              <div>
-                <p>{obj.name}</p>
-                <p>{obj.number}</p>
-              </div>
-              <button onClick={() => this.remov(obj.id)}>Видалити</button>
-            </ContactItem>
-          ))}
-        </ContactList>
-      </Container>
-    );
-  }
-}
+        <p>Number</p>
+        <input
+          type="tel"
+          name="number"
+          value={number}
+          pattern="\+?\d{1,4}?[-.\s]?\(?\d{1,3}?\)?[-.\s]?\d{1,4}[-.\s]?\d{1,4}[-.\s]?\d{1,9}"
+          title="Phone number must be digits and can contain spaces, dashes, parentheses and can start with +"
+          required
+          onChange={e => setNumber(e.target.value)}
+        />
+      </InputBlock>
 
+      <Btn onClick={addContact}>ADD</Btn>
+
+      <Title>Contacts</Title>
+
+      <input
+        placeholder="Find contact"
+        value={filter}
+        onChange={e => setFilter(e.target.value)}
+      />
+
+      <ContactList>
+        {filteredContacts.map(c => (
+          <ContactItem key={c.id}>
+            <div>
+              <p>{c.name}</p>
+              <p>{c.number}</p>
+            </div>
+            <button onClick={() => removeContact(c.id)}>Видалити</button>
+          </ContactItem>
+        ))}
+      </ContactList>
+    </Container>
+  );
+}
 
 export default App;
