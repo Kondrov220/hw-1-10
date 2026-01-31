@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import styled from "styled-components";
+import { useUser } from "./context/context";
 import "./App.css";
 
 const Container = styled.div`
@@ -76,27 +77,21 @@ const ContactItem = styled.li`
 `;
 
 function App() {
-  const [contacts, setContacts] = useState([
-    { id: 'id-1', name: 'Rosie Simpson', number: '459-12-56' },
-    { id: 'id-2', name: 'Hermione Kline', number: '443-89-12' },
-    { id: 'id-3', name: 'Eden Clements', number: '645-17-79' },
-    { id: 'id-4', name: 'Annie Copeland', number: '227-91-26' },
-  ]);
+ const { contacts, setContacts } = useUser();
 
   const [name, setName] = useState("");
   const [number, setNumber] = useState("");
   const [filter, setFilter] = useState("");
 
-  // useRef для фокусування на полі Name
   const nameInputRef = useRef();
 
-  // Завантаження контактів з localStorage
+
   useEffect(() => {
     const saved = JSON.parse(localStorage.getItem("contacts"));
     if (saved) setContacts(saved);
   }, []);
 
-  // Збереження контактів у localStorage
+
   useEffect(() => {
     localStorage.setItem("contacts", JSON.stringify(contacts));
   }, [contacts]);
@@ -112,7 +107,7 @@ function App() {
     setContacts([...contacts, { id: Date.now(), name, number }]);
     setName("");
     setNumber("");
-    nameInputRef.current.focus(); // повертаємо фокус на поле Name
+    nameInputRef.current.focus(); 
   };
 
   const removeContact = (id) => {
@@ -132,7 +127,7 @@ function App() {
         <input
           type="text"
           value={name}
-          ref={nameInputRef} // посилання на інпут
+          ref={nameInputRef} 
           onChange={e => setName(e.target.value)}
           pattern="^[a-zA-Zа-яА-Я]+(([' -][a-zA-Zа-яА-Я ])?[a-zA-Zа-яА-Я]*)*$"
           title="Name may contain only letters, apostrophe, dash and spaces."
@@ -174,5 +169,4 @@ function App() {
     </Container>
   );
 }
-
 export default App;
