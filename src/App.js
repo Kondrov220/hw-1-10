@@ -1,6 +1,5 @@
-import { useState, useEffect, useRef } from "react";
+import { useReducer, useEffect } from "react";
 import styled from "styled-components";
-import { useUser } from "./context/context";
 import "./App.css";
 
 const Container = styled.div`
@@ -15,106 +14,87 @@ const Title = styled.h2`
   text-align: center;
 `;
 
-const InputBlock = styled.div`
-  margin-bottom: 20px;
-
-  p {
-    margin: 0;
-    font-weight: 600;
-  }
-
-  input {
-    width: 100%;
-    padding: 8px;
-    margin-top: 4px;
-    margin-bottom: 10px;
-    border-radius: 6px;
-    border: 1px solid #aaa;
-  }
-`;
-
 const Btn = styled.button`
-  padding: 10px 15px;
+  padding: 10px;
   border: none;
   background: #007aff;
-  border-radius: 6px;
   color: white;
-  font-weight: bold;
-  cursor: pointer;
+  border-radius: 6px;
   margin-bottom: 20px;
+`;
 
-  &:hover {
-    background: #005ad1;
+const initialState = {
+  contacts: [],
+  name: "",
+  number: "",
+  filter: "",
+};
+
+function reducer(state, action) {
+  switch (action.type) {
+    case "SET_NAME":
+      return { ...state, name: action.payload };
+
+    case "SET_NUMBER":
+      return { ...state, number: action.payload };
+
+    case "ADD":
+      return {
+        ...state,
+        contacts: [...state.contacts, action.payload],
+        name: "",
+        number: "",
+      };
+
+    case "DELETE":
+      return {
+        ...state,
+        contacts: state.contacts.filter(c => c.id !== action.payload),
+      };
+
+    case "SET_CONTACTS":
+      return { ...state, contacts: action.payload };
+
+    case "FILTER":
+      return { ...state, filter: action.payload };
+
+    default:
+      return state;
   }
-`;
+}
 
-const ContactList = styled.ul`
-  list-style: none;
-  padding: 0;
-`;
-
-const ContactItem = styled.li`
-  border: 1px solid #ccc;
-  padding: 10px;
-  border-radius: 8px;
-  margin-bottom: 10px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-
-  button {
-    background: red;
-    border: none;
-    color: white;
-    padding: 6px 10px;
-    border-radius: 5px;
-    cursor: pointer;
-
-    &:hover {
-      background: darkred;
-    }
-  }
-`;
-
-function App() {
- const { contacts, setContacts } = useUser();
-
-  const [name, setName] = useState("");
-  const [number, setNumber] = useState("");
-  const [filter, setFilter] = useState("");
-
-  const nameInputRef = useRef();
-
-
+function useLocalStorage(contacts, dispatch) {
   useEffect(() => {
     const saved = JSON.parse(localStorage.getItem("contacts"));
-    if (saved) setContacts(saved);
-  }, []);
-
+    if (saved) dispatch({ type: "SET_CONTACTS", payload: saved });
+  }, [dispatch]);
 
   useEffect(() => {
     localStorage.setItem("contacts", JSON.stringify(contacts));
   }, [contacts]);
+}
+
+export default function App() {
+  const [state, dispatch] = useReducer(reducer, initialState);
+  const { contacts, name, number, filter } = state;
+
+  useLocalStorage(contacts, dispatch);
 
   const addContact = () => {
     if (!name || !number) return;
 
     if (contacts.some(c => c.name.toLowerCase() === name.toLowerCase())) {
-      alert(`${name} is already in contacts`);
+      alert("Already exists");
       return;
     }
 
-    setContacts([...contacts, { id: Date.now(), name, number }]);
-    setName("");
-    setNumber("");
-    nameInputRef.current.focus(); 
+    dispatch({
+      type: "ADD",
+      payload: { id: Date.now(), name, number },
+    });
   };
 
-  const removeContact = (id) => {
-    setContacts(contacts.filter(c => c.id !== id));
-  };
-
-  const filteredContacts = contacts.filter(c =>
+  const filtered = contacts.filter(c =>
     c.name.toLowerCase().includes(filter.toLowerCase())
   );
 
@@ -122,28 +102,21 @@ function App() {
     <Container>
       <Title>Phonebook</Title>
 
-      <InputBlock>
-        <p>Name</p>
-        <input
-          type="text"
-          value={name}
-          ref={nameInputRef} 
-          onChange={e => setName(e.target.value)}
-          pattern="^[a-zA-Zа-яА-Я]+(([' -][a-zA-Zа-яА-Я ])?[a-zA-Zа-яА-Я]*)*$"
-          title="Name may contain only letters, apostrophe, dash and spaces."
-          required
-        />
+      <input
+        placeholder="Name"
+        value={name}
+        onChange={e =>
+          dispatch({ type: "SET_NAME", payload: e.target.value })
+        }
+      />
 
-        <p>Number</p>
-        <input
-          type="tel"
-          value={number}
-          onChange={e => setNumber(e.target.value)}
-          pattern="\+?\d{1,4}?[-.\s]?\(?\d{1,3}?\)?[-.\s]?\d{1,4}[-.\s]?\d{1,4}[-.\s]?\d{1,9}"
-          title="Phone number must be digits and can contain spaces, dashes, parentheses and can start with +"
-          required
-        />
-      </InputBlock>
+      <input
+        placeholder="Number"
+        value={number}
+        onChange={e =>
+          dispatch({ type: "SET_NUMBER", payload: e.target.value })
+        }
+      />
 
       <Btn onClick={addContact}>ADD</Btn>
 
@@ -152,21 +125,25 @@ function App() {
       <input
         placeholder="Find contact"
         value={filter}
-        onChange={e => setFilter(e.target.value)}
+        onChange={e =>
+          dispatch({ type: "FILTER", payload: e.target.value })
+        }
       />
 
-      <ContactList>
-        {filteredContacts.map(c => (
-          <ContactItem key={c.id}>
-            <div>
-              <p>{c.name}</p>
-              <p>{c.number}</p>
-            </div>
-            <button onClick={() => removeContact(c.id)}>Delete</button>
-          </ContactItem>
+      <ul>
+        {filtered.map(c => (
+          <li key={c.id}>
+            {c.name} — {c.number}
+            <button
+              onClick={() =>
+                dispatch({ type: "DELETE", payload: c.id })
+              }
+            >
+              X
+            </button>
+          </li>
         ))}
-      </ContactList>
+      </ul>
     </Container>
   );
 }
-export default App;
