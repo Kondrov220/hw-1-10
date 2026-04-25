@@ -1,4 +1,11 @@
-import { useReducer, useEffect } from "react";
+import { useState } from "react";
+import { useSelector, useDispatch } from "react-redux";
+import {
+  addContact,
+  deleteContact,
+  setFilter,
+} from "./reducer";
+
 import styled from "styled-components";
 import "./App.css";
 
@@ -23,64 +30,16 @@ const Btn = styled.button`
   margin-bottom: 20px;
 `;
 
-const initialState = {
-  contacts: [],
-  name: "",
-  number: "",
-  filter: "",
-};
-
-function reducer(state, action) {
-  switch (action.type) {
-    case "SET_NAME":
-      return { ...state, name: action.payload };
-
-    case "SET_NUMBER":
-      return { ...state, number: action.payload };
-
-    case "ADD":
-      return {
-        ...state,
-        contacts: [...state.contacts, action.payload],
-        name: "",
-        number: "",
-      };
-
-    case "DELETE":
-      return {
-        ...state,
-        contacts: state.contacts.filter(c => c.id !== action.payload),
-      };
-
-    case "SET_CONTACTS":
-      return { ...state, contacts: action.payload };
-
-    case "FILTER":
-      return { ...state, filter: action.payload };
-
-    default:
-      return state;
-  }
-}
-
-function useLocalStorage(contacts, dispatch) {
-  useEffect(() => {
-    const saved = JSON.parse(localStorage.getItem("contacts"));
-    if (saved) dispatch({ type: "SET_CONTACTS", payload: saved });
-  }, [dispatch]);
-
-  useEffect(() => {
-    localStorage.setItem("contacts", JSON.stringify(contacts));
-  }, [contacts]);
-}
-
 export default function App() {
-  const [state, dispatch] = useReducer(reducer, initialState);
-  const { contacts, name, number, filter } = state;
+  const dispatch = useDispatch();
 
-  useLocalStorage(contacts, dispatch);
+  const contacts = useSelector(state => state.contacts);
+  const filter = useSelector(state => state.filter);
 
-  const addContact = () => {
+  const [name, setName] = useState("");
+  const [number, setNumber] = useState("");
+
+  const add = () => {
     if (!name || !number) return;
 
     if (contacts.some(c => c.name.toLowerCase() === name.toLowerCase())) {
@@ -88,10 +47,16 @@ export default function App() {
       return;
     }
 
-    dispatch({
-      type: "ADD",
-      payload: { id: Date.now(), name, number },
-    });
+    dispatch(
+      addContact({
+        id: Date.now(),
+        name,
+        number,
+      })
+    );
+
+    setName("");
+    setNumber("");
   };
 
   const filtered = contacts.filter(c =>
@@ -105,40 +70,30 @@ export default function App() {
       <input
         placeholder="Name"
         value={name}
-        onChange={e =>
-          dispatch({ type: "SET_NAME", payload: e.target.value })
-        }
+        onChange={e => setName(e.target.value)}
       />
 
       <input
         placeholder="Number"
         value={number}
-        onChange={e =>
-          dispatch({ type: "SET_NUMBER", payload: e.target.value })
-        }
+        onChange={e => setNumber(e.target.value)}
       />
 
-      <Btn onClick={addContact}>ADD</Btn>
+      <Btn onClick={add}>ADD</Btn>
 
       <Title>Contacts</Title>
 
       <input
         placeholder="Find contact"
         value={filter}
-        onChange={e =>
-          dispatch({ type: "FILTER", payload: e.target.value })
-        }
+        onChange={e => dispatch(setFilter(e.target.value))}
       />
 
       <ul>
         {filtered.map(c => (
           <li key={c.id}>
             {c.name} — {c.number}
-            <button
-              onClick={() =>
-                dispatch({ type: "DELETE", payload: c.id })
-              }
-            >
+            <button onClick={() => dispatch(deleteContact(c.id))}>
               X
             </button>
           </li>
