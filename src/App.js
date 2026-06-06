@@ -1,11 +1,6 @@
 import { useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import {
-  addContact,
-  deleteContact,
-  setFilter,
-} from "./reducer";
-
+import { addContact, deleteContact, setFilter } from "./redux/reducer";
 import styled from "styled-components";
 import "./App.css";
 
@@ -28,11 +23,11 @@ const Btn = styled.button`
   color: white;
   border-radius: 6px;
   margin-bottom: 20px;
+  cursor: pointer;
 `;
 
 export default function App() {
   const dispatch = useDispatch();
-
   const contacts = useSelector(state => state.contacts);
   const filter = useSelector(state => state.filter);
 
@@ -43,13 +38,13 @@ export default function App() {
     if (!name || !number) return;
 
     if (contacts.some(c => c.name.toLowerCase() === name.toLowerCase())) {
-      alert("Already exists");
+      alert(`${name} is already in contacts.`);
       return;
     }
 
     dispatch(
       addContact({
-        id: Date.now(),
+        id: `id-${Date.now()}`,
         name,
         number,
       })
@@ -59,7 +54,7 @@ export default function App() {
     setNumber("");
   };
 
-  const filtered = contacts.filter(c =>
+  const filteredContacts = contacts.filter(c =>
     c.name.toLowerCase().includes(filter.toLowerCase())
   );
 
@@ -90,7 +85,7 @@ export default function App() {
       />
 
       <ul>
-        {filtered.map(c => (
+        {filteredContacts.map(c => (
           <li key={c.id}>
             {c.name} — {c.number}
             <button onClick={() => dispatch(deleteContact(c.id))}>
