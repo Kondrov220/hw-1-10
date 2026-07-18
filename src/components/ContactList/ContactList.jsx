@@ -1,36 +1,19 @@
-import { useSelector, useDispatch } from "react-redux";
-import { deleteContact } from "../../redux/operations";
-import { selectFilteredContacts } from "../../redux/selectors";
-import PropTypes from "prop-types";
-import styles from "./ContactList.module.css";
+import { useSelector } from 'react-redux';
+import { selectFilteredContacts } from '../../redux/selectors';
 
-export default function ContactList() {
-  const dispatch = useDispatch();
-  const filteredContacts = useSelector(selectFilteredContacts);
+export const ContactList = () => {
+  const contacts = useSelector(selectFilteredContacts);
+  
+
+  console.log("Контакти, які дійшли до списку:", contacts);
 
   return (
-    <ul className={styles.list}>
-      {filteredContacts.map(({ id, name, phone }) => (
-        <li key={id} className={styles.item}>
-          <span>{name}: {phone}</span>
-          <button 
-            className={styles.deleteBtn}
-            onClick={() => dispatch(deleteContact(id))}
-          >
-            Delete
-          </button>
+    <ul>
+      {contacts.map(({ id, name, number }) => (
+        <li key={id}>
+          {name}: {number}
         </li>
       ))}
     </ul>
   );
-}
-
-ContactList.propTypes = {
-  filteredContacts: PropTypes.arrayOf(
-    PropTypes.shape({
-      id: PropTypes.string.isRequired,
-      name: PropTypes.string.isRequired,
-      phone: PropTypes.string.isRequired,
-    })
-  ),
 };

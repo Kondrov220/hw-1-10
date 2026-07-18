@@ -1,41 +1,55 @@
-import { useEffect } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { fetchContacts } from "./redux/operations";
-import { selectContactsIsLoading, selectContactsError } from "./redux/selectors";
-import ContactForm from "./components/ContactForm/ContactForm";
-import ContactList from "./components/ContactList/ContactList";
-import Filter from "./components/Filter/Filter";
-import styled from "styled-components";
+import { useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { Routes, Route, Navigate } from 'react-router-dom';
 
-const Container = styled.div`
-  width: 400px;
-  margin: 40px auto;
-  padding: 20px;
-  background: #f3f3f3;
-  border-radius: 10px;
-  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
-`;
+import { PrivateRoute } from './components/PrivateRoute';
+import { RestrictedRoute } from './components/RestrictedRoute';
+import { refreshUser } from './redux/auth/operations';
+import { selectIsRefreshing } from './redux/auth/selectors';
 
-export default function App() {
+// Імпорт сторінок
+import Login from './pages/Login';
+import Register from './pages/Register';
+import Contacts from './pages/Contacts';
+
+export const App = () => {
   const dispatch = useDispatch();
-  const isLoading = useSelector(selectContactsIsLoading);
-  const error = useSelector(selectContactsError);
+  const isRefreshing = useSelector(selectIsRefreshing);
 
   useEffect(() => {
-    dispatch(fetchContacts());
+    dispatch(refreshUser());
   }, [dispatch]);
 
-  return (
-    <Container>
-      <h1>Phonebook</h1>
-      <ContactForm />
-      <h2>Contacts</h2>
-      <Filter />
-      
-      {isLoading && <p style={{ textAlign: "center" }}>Loading contacts...</p>}
-      {error && <p style={{ color: "red", textAlign: "center" }}>Error: {error}</p>}
-      
-      <ContactList />
-    </Container>
+  return isRefreshing ? (
+    <b>Refreshing user...</b>
+  ) : (
+    <Routes>
+      {/* Маршрут для реєстрації (тільки для неавторизованих) */}
+      <Route
+        path="/register"
+        element={
+          <RestrictedRoute redirectTo="/contacts" component={<Register />} />
+        }
+      />
+
+      {/* Маршрут для логіну (тільки для неавторизованих) */}
+      <Route
+        path="/login"
+        element={
+          <RestrictedRoute redirectTo="/contacts" component={<Login />} />
+        }
+      />
+
+      {/* Маршрут для контактів (тільки для авторизованих) */}
+      <Route
+        path="/contacts"
+        element={
+          <PrivateRoute redirectTo="/registr" component={<Contacts />} />
+        }
+      />
+
+      {/* Редирект, якщо користувач зайшов на неіснуючу сторінку */}
+      <Route path="*" element={<Navigate to="/login" />} />
+    </Routes>
   );
-}
+};
