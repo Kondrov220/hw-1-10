@@ -1,3 +1,7 @@
+import { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchContacts } from "./redux/operations";
+import { selectContactsIsLoading, selectContactsError } from "./redux/selectors";
 import ContactForm from "./components/ContactForm/ContactForm";
 import ContactList from "./components/ContactList/ContactList";
 import Filter from "./components/Filter/Filter";
@@ -12,26 +16,25 @@ const Container = styled.div`
   box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
 `;
 
-const MainTitle = styled.h1`
-  text-align: center;
-  font-size: 24px;
-  margin-bottom: 20px;
-`;
-
-const SectionTitle = styled.h2`
-  font-size: 20px;
-  margin-top: 20px;
-  margin-bottom: 10px;
-`;
-
 export default function App() {
+  const dispatch = useDispatch();
+  const isLoading = useSelector(selectContactsIsLoading);
+  const error = useSelector(selectContactsError);
+
+  useEffect(() => {
+    dispatch(fetchContacts());
+  }, [dispatch]);
+
   return (
     <Container>
-      <MainTitle>Phonebook</MainTitle>
+      <h1>Phonebook</h1>
       <ContactForm />
-
-      <SectionTitle>Contacts</SectionTitle>
+      <h2>Contacts</h2>
       <Filter />
+      
+      {isLoading && <p style={{ textAlign: "center" }}>Loading contacts...</p>}
+      {error && <p style={{ color: "red", textAlign: "center" }}>Error: {error}</p>}
+      
       <ContactList />
     </Container>
   );

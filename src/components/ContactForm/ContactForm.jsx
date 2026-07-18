@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { addContact } from "../../redux/reducer";
+import { addContact } from "../../redux/operations";
+import { selectContactsItems } from "../../redux/selectors";
 import styles from "./ContactForm.module.css";
 
 export default function ContactForm() {
   const dispatch = useDispatch();
-  const contacts = useSelector((state) => state.contacts);
+  const contacts = useSelector(selectContactsItems);
 
   const [name, setName] = useState("");
   const [number, setNumber] = useState("");
@@ -19,14 +20,7 @@ export default function ContactForm() {
       return;
     }
 
-    dispatch(
-      addContact({
-        id: `id-${Date.now()}`,
-        name,
-        number,
-      })
-    );
-
+    dispatch(addContact({ name, number }));
     setName("");
     setNumber("");
   };
@@ -35,7 +29,6 @@ export default function ContactForm() {
     <form className={styles.form} onSubmit={handleSubmit}>
       <input
         type="text"
-        name="name"
         placeholder="Name"
         value={name}
         onChange={(e) => setName(e.target.value)}
@@ -43,7 +36,6 @@ export default function ContactForm() {
       />
       <input
         type="tel"
-        name="number"
         placeholder="Number"
         value={number}
         onChange={(e) => setNumber(e.target.value)}
